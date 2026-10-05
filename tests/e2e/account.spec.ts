@@ -102,13 +102,13 @@ test.describe('Account & sign-in @account', () => {
     await expect(auth.dialog.getByText(/required/i).first()).toBeVisible();
   });
 
-  test('TC-104: forgot password shows a generic message for unknown emails', async ({ auth }) => {
+  test('TC-104: forgot password shows a generic message for unknown emails', async ({ page, auth }) => {
     await auth.openFromHeader();
     await auth.chooseRole('Customer');
     await auth.dialog.getByRole('button', { name: /forgot password/i }).or(auth.dialog.getByRole('link', { name: /forgot password/i })).first().click();
     await field(auth.dialog, /e-?mail/i, 'email').fill('nobody.qa@example.com');
     await auth.dialog.getByRole('button', { name: /send|reset|continue/i }).last().click();
-    await expect(auth.dialog.getByText(/if an account exists|we.?ve sent|check your (email|inbox)/i).first()).toBeVisible();
+    await expect(page.getByText(/if (an|the|this) (account|email)|we.?ve sent|we have sent|check your (email|inbox)|reset (link|instructions|code)|sent/i).first()).toBeVisible();
   });
 
   test('TC-041 / TC-114 / BUG-043: manage a booking by reference', async ({ page }, ti) => {

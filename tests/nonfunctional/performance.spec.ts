@@ -52,8 +52,7 @@ test.describe('Performance @performance', () => {
     for (const l of imgs) expect.soft(l).toBe('lazy');
   });
 
-  test('TC-052 / BUG-008: skeleton loaders on the booking step resolve', async ({ page, rooms }, ti) => {
-    knownBug(ti, 'BUG-008');
+  test('TC-052 / BUG-008: skeleton loaders on the booking step resolve', async ({ page, rooms }) => {
     await rooms.open();
     await rooms.waitForResults();
     await rooms.selectRoom(0).click();

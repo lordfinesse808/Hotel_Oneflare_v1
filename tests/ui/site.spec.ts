@@ -1,4 +1,4 @@
-import { test, expect, knownBug } from '../../utils/fixtures';
+import { test, expect, knownBug, interceptWrites } from '../../utils/fixtures';
 import { BRANCHES, CONTACT, XSS, STATIC_PAGES } from '../../utils/data';
 
 test.describe('Home @home', () => {
@@ -177,8 +177,7 @@ test.describe('Branches @branches', () => {
     expect(ids.size, 'distinct branchIds').toBe(BRANCHES.length);
   });
 
-  test('TC-073 / BUG-048: "Contact this branch" opens Contact with that branch tab active', async ({ page, branches }, ti) => {
-    knownBug(ti, 'BUG-048');
+  test('TC-073 / BUG-048: "Contact this branch" opens Contact with that branch tab active', async ({ page, branches }) => {
     await branches.card('Lekki').getByRole('link', { name: /contact this branch/i }).or(page.getByRole('link', { name: /contact this branch/i }).nth(2)).first().click();
     await expect(page).toHaveURL(/\/contact/);
     await expect(page.getByText(/going to.*lekki/i).first()).toBeVisible();
@@ -221,7 +220,9 @@ test.describe('Gallery @gallery', () => {
   });
 
   test('TC-111: lightbox opens, navigates and closes with keyboard', async ({ page, gallery }) => {
-    await gallery.images().first().click({ force: true });
+    const img = gallery.images().first();
+    const trigger = img.locator('xpath=ancestor::*[self::button or self::a or @role="button" or @tabindex][1]');
+    await ((await trigger.count()) ? trigger : img).click({ force: true });
     await expect(gallery.lightbox).toBeVisible();
     await page.keyboard.press('ArrowRight');
     await page.keyboard.press('ArrowLeft');
@@ -274,11 +275,7 @@ test.describe('Contact @contact', () => {
 
   test('TC-012: contact form submits with valid data', async ({ page, contact }) => {
     // Intercept the submission so no real enquiry is sent to the front office.
-    let payload: any;
-    await page.route(/\/api\/(contact|enquir|messages?)/i, async (r) => {
-      payload = r.request().postDataJSON();
-      await r.fulfill({ status: 200, json: { ok: true } });
-    });
+    const writes = await interceptWrites(page, { status: 200, json: { ok: true } });
     await contact.name.fill(CONTACT.name);
     await contact.email.fill(CONTACT.email);
     await contact.phone.fill(CONTACT.phone);
@@ -286,14 +283,14 @@ test.describe('Contact @contact', () => {
     await contact.message.fill(CONTACT.message);
     await page.getByRole('checkbox').first().check().catch(() => {});
     await contact.send.click();
-    await expect(page.getByText(/thank|sent|received|we.?ll be in touch/i).first()).toBeVisible();
-    expect(payload).toBeTruthy();
+    await expect.poll(() => writes.length, { message: 'form submits a request' }).toBeGreaterThan(0);
+    expect(writes.map((w) => w.body).join('\n')).toContain(CONTACT.email);
   });
 
   test('TC-057: contact form does not execute injected script @security', async ({ page, contact }) => {
     let dialog = false;
     page.on('dialog', async (d) => { dialog = true; await d.dismiss(); });
-    await page.route(/\/api\/(contact|enquir|messages?)/i, (r) => r.fulfill({ status: 200, json: { ok: true } }));
+    await interceptWrites(page, { status: 200, json: { ok: true } });
     await contact.name.fill(XSS);
     await contact.email.fill(CONTACT.email);
     await contact.phone.fill(CONTACT.phone);

@@ -11,7 +11,11 @@ export class BookingPage extends BasePage {
   readonly editDetails = this.page.getByRole('button', { name: /edit details|back to guest details/i }).or(this.page.getByRole('link', { name: /edit details|back to guest details/i })).first();
   readonly changeRoom = this.page.getByRole('link', { name: /change room or dates/i }).or(this.page.getByRole('button', { name: /change room or dates/i })).first();
   readonly summary: Locator = this.page.locator('aside, [class*="summary" i]').filter({ hasText: /total/i }).first();
-  readonly confirmation = this.page.getByText(/confirmed|booking reference|reservation (number|reference)/i).first();
+  /** Confirmation heading or reference (the step indicator always contains a "Confirmed" label). */
+  readonly confirmation = this.page
+    .getByRole('heading', { name: /confirmed|booking (is )?confirmed|reservation (is )?confirmed|thank you/i })
+    .or(this.page.getByText(/booking reference|reservation (number|reference)|reference:/i))
+    .first();
 
   open() {
     return this.goto('/booking');

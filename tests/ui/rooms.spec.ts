@@ -23,8 +23,7 @@ test.describe('Rooms listing @rooms', () => {
     }
   });
 
-  test('TC-003 / BUG-002: card titles have no duplicated "Room" @regression', async ({ rooms }, ti) => {
-    knownBug(ti, 'BUG-002');
+  test('TC-003 / BUG-002: card titles have no duplicated "Room" @regression', async ({ rooms }) => {
     for (const t of await rooms.cardTitles()) expect.soft(t).not.toMatch(/\bRoom Room\b/i);
   });
 
@@ -127,15 +126,13 @@ test.describe('Rooms search @rooms @search', () => {
     expect(page.url()).toMatch(/branchId=/);
   });
 
-  test('TC-076 / BUG-025: Lagos branch lists no test rooms', async ({ rooms }, ti) => {
-    knownBug(ti, 'BUG-025');
+  test('TC-076 / BUG-025: Lagos branch lists no test rooms', async ({ rooms }) => {
     await rooms.open();
     await rooms.search({ branch: 'Lagos' });
     for (const t of await rooms.cardTitles()) expect.soft(t).not.toMatch(/test|latest type/i);
   });
 
-  test('TC-025 / BUG-017: card total = nightly rate x nights', async ({ rooms }, ti) => {
-    knownBug(ti, 'BUG-017');
+  test('TC-025 / BUG-017: card total = nightly rate x nights', async ({ rooms }) => {
     const s = stay(15, 2);
     await rooms.open(s);
     await rooms.waitForResults();
@@ -257,7 +254,9 @@ test.describe('Room details @rooms @details', () => {
     const inc = roomDetail.stepper('adults', 'increase');
     test.skip(!(await dec.isVisible().catch(() => false)), 'No adults stepper buttons found');
     for (let i = 0; i < 5 && (await dec.isEnabled()); i++) await dec.click();
-    expect(Number(await roomDetail.adults.inputValue().catch(async () => (await roomDetail.adults.textContent()) ?? '1'))).toBeGreaterThanOrEqual(1);
+    // The count sits between the -/+ buttons
+    const count = async () => Number((await dec.locator('xpath=..').innerText()).match(/\d+/)?.[0] ?? NaN);
+    expect(await count(), 'adults never below 1').toBeGreaterThanOrEqual(1);
     for (let i = 0; i < 20 && (await inc.isEnabled()); i++) await inc.click();
     expect(await inc.isEnabled(), 'increase disabled at capacity').toBe(false);
   });

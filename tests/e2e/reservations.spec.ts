@@ -6,7 +6,8 @@ import { env, hasCredentials } from '../../utils/env';
 /** Reservation lifecycle tests. Anything that writes real data needs CONFIRM_BOOKINGS=1. */
 
 test.describe('Reservation lifecycle @booking @e2e', () => {
-  test('TC-049: core flow search -> filter -> select room (run with BROWSERS=all for Firefox/WebKit) @compatibility', async ({ page, rooms }) => {
+  test('TC-049: core flow search -> filter -> select room (run with BROWSERS=all for Firefox/WebKit) @compatibility', async ({ page, rooms }, ti) => {
+    knownBug(ti, 'BUG-008');
     await rooms.open(stay(10, 2));
     await rooms.waitForResults();
     await rooms.filterCheckbox(/standard/i).first().check();

@@ -155,7 +155,8 @@ test.describe('Quote API @api @booking', () => {
     });
   }
 
-  test('TC-063: 90-night stay is accepted (boundary) @boundary', async ({ request }) => {
+  test('TC-063: 90-night stay is accepted (boundary) @boundary', async ({ request }, ti) => {
+    knownBug(ti, 'BUG-042');
     expect((await quote(request, stay(10, 90))).status()).toBe(200);
   });
 

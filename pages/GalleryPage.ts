@@ -1,7 +1,7 @@
 import { BasePage } from './BasePage';
 
 export class GalleryPage extends BasePage {
-  readonly lightbox = this.page.getByRole('dialog').first();
+  readonly lightbox = this.page.getByRole('dialog').or(this.page.locator('[class*="fixed"][class*="inset-0"]:has(img)')).first();
 
   open() {
     return this.goto('/gallery');

@@ -58,6 +58,37 @@ export function knownBug(testInfo: TestInfo, ...bugIds: string[]) {
   if (env.expectKnownBugs) testInfo.fail(true, `Open defect(s): ${bugIds.join(', ')}`);
 }
 
+export type CapturedWrite = { method: string; url: string; body: string };
+
+/**
+ * Intercepts every same-origin non-GET request (fetch, form posts, Next.js
+ * server actions) except URLs matching `allow`, records it and answers with
+ * `respond`. Prevents tests from creating real bookings or enquiries.
+ */
+export async function interceptWrites(
+  page: Page,
+  respond: { status: number; json: unknown },
+  allow: RegExp = /\/api\/(booking\/quote|auth\/)/,
+): Promise<CapturedWrite[]> {
+  const captured: CapturedWrite[] = [];
+  const origin = new URL(test.info().project.use.baseURL!).origin;
+  await page.route(
+    (url) => url.origin === origin,
+    async (route) => {
+      const req = route.request();
+      if (['GET', 'HEAD', 'OPTIONS'].includes(req.method()) || allow.test(req.url())) return route.continue();
+      const raw = req.postData() ?? '';
+      let body = raw;
+      try {
+        body = decodeURIComponent(raw.replace(/\+/g, ' '));
+      } catch {}
+      captured.push({ method: req.method(), url: req.url(), body });
+      await route.fulfill({ status: respond.status, json: respond.json });
+    },
+  );
+  return captured;
+}
+
 /** Waits until skeleton placeholders are gone (BUG-008 / BUG-037 / TC-052). */
 export async function waitForSkeletonsToResolve(page: Page, timeout = 15_000) {
   const skeleton = page.locator('[class*="skeleton" i], [class*="animate-pulse"], [aria-busy="true"]');

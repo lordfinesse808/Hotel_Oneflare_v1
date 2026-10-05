@@ -45,7 +45,7 @@ test.describe('Mobile 375px @ui @responsive @mobile', () => {
     const show = drawer.getByRole('button', { name: /show \d+ rooms?/i });
     const n = Number(((await show.textContent()) ?? '').match(/\d+/)?.[0]);
     await show.click();
-    await expect(drawer).toBeHidden();
+    await expect(drawer).not.toBeInViewport();
     await expect(rooms.cards()).toHaveCount(n);
   });
 
@@ -56,7 +56,7 @@ test.describe('Mobile 375px @ui @responsive @mobile', () => {
       await expect.soft(page.getByRole('link', { name }).filter({ visible: true }).first()).toBeVisible();
     }
     await page.getByRole('button', { name: /close menu/i }).click();
-    await expect(page.getByRole('link', { name: /book now/i }).filter({ visible: true })).toHaveCount(0);
+    await expect(page.getByRole('dialog', { name: /navigation menu/i })).not.toBeInViewport();
   });
 
   test('TC-050: mobile search -> select room works with touch', async ({ page, rooms }) => {
