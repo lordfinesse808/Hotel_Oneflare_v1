@@ -94,23 +94,32 @@ test.describe('Quote API @api @booking', () => {
   const quote = (request: any, data: Record<string, unknown>) =>
     request.post('/api/booking/quote', { data: { roomId: BOOKABLE_ROOM_ID, adults: 1, children: 0, ...stay(15, 2), ...data } });
 
+  /** Unwraps { data: {...} } / { quote: {...} } envelopes and attaches the raw body. */
+  const quoteBody = async (res: any) => {
+    const raw = await res.text();
+    await test.info().attach('quote-response.json', { body: raw, contentType: 'application/json' });
+    const body = JSON.parse(raw);
+    return body.data ?? body.quote ?? body;
+  };
+
   test('TC-025: valid 2-night quote returns nights, rate and total', async ({ request }) => {
     const res = await quote(request, {});
     expect(res.status()).toBe(200);
-    const q = await res.json();
+    const q = await quoteBody(res);
     expect(q.nights).toBe(2);
     expect(q.roomTotal).toBeCloseTo(q.rate * 2, 2);
   });
 
   test('TC-025: 3-night total = 3 x nightly rate', async ({ request }) => {
-    const q = await (await quote(request, stay(15, 3))).json();
+    const q = await quoteBody(await quote(request, stay(15, 3)));
     expect(q.nights).toBe(3);
     expect(q.roomTotal).toBeCloseTo(q.rate * 3, 2);
   });
 
   test('TC-067 / BUG-018: tax lines are guest-facing and correctly calculated', async ({ request }, ti) => {
     knownBug(ti, 'BUG-018');
-    const q = await (await quote(request, {})).json();
+    const q = await quoteBody(await quote(request, {}));
+    expect(q.taxes?.length ?? 0, 'quote has tax lines').toBeGreaterThan(0);
     const taxes: any[] = q.taxes ?? [];
     for (const t of taxes) {
       expect.soft(t.name, 'internal tax name').not.toMatch(/^comm$/i);
@@ -122,7 +131,7 @@ test.describe('Quote API @api @booking', () => {
 
   test('TC-068 / BUG-019: 5-night stay applies "fifth night on us"', async ({ request }, ti) => {
     knownBug(ti, 'BUG-019');
-    const q = await (await quote(request, stay(15, 5))).json();
+    const q = await quoteBody(await quote(request, stay(15, 5)));
     const discounted = q.roomTotal <= q.rate * 4 + 0.01 || (q.discounts ?? q.offers ?? []).length > 0;
     expect(discounted, `roomTotal ${q.roomTotal} for rate ${q.rate}`).toBe(true);
   });
@@ -138,7 +147,8 @@ test.describe('Quote API @api @booking', () => {
     ['bad roomId', { roomId: 'not-a-uuid' }],
   ];
   for (const [name, payload] of invalid) {
-    test(`TC-098: server rejects ${name} with 4xx @security @negative`, async ({ request }) => {
+    test(`TC-098: server rejects ${name} with 4xx @security @negative`, async ({ request }, ti) => {
+      knownBug(ti, 'BUG-042');
       const res = await quote(request, payload);
       expect(res.status()).toBeGreaterThanOrEqual(400);
       expect(res.status()).toBeLessThan(500);
@@ -175,8 +185,7 @@ test.describe('HTTP, security headers and SEO @api', () => {
     }
   });
 
-  test('TC-058: HTTP redirects to HTTPS and HSTS is set @security', async ({ request }, ti) => {
-    knownBug(ti, 'BUG-040');
+  test('TC-058: HTTP redirects to HTTPS and HSTS is set @security', async ({ request }) => {
     const res = await request.get('/');
     expect(res.headers()['strict-transport-security']).toBeTruthy();
     const httpUrl = new URL(test.info().project.use.baseURL!);

@@ -1,11 +1,11 @@
-import { BasePage } from './BasePage';
+import { BasePage, field } from './BasePage';
 
 export class ContactPage extends BasePage {
-  readonly name = this.page.getByLabel(/^name|full name/i).first();
-  readonly email = this.page.getByLabel(/e-?mail/i).first();
-  readonly phone = this.page.getByLabel(/phone/i).first();
-  readonly subject = this.page.getByLabel(/subject/i).first();
-  readonly message = this.page.getByLabel(/message/i).first();
+  readonly name = field(this.page, /^name|full name|your name/i, 'name');
+  readonly email = field(this.page, /e-?mail/i, 'email');
+  readonly phone = field(this.page, /phone/i, 'phone');
+  readonly subject = field(this.page, /subject/i, 'subject');
+  readonly message = field(this.page, /message/i, 'message');
   readonly send = this.page.getByRole('button', { name: /send/i }).first();
   readonly goingTo = this.page.getByText(/going to/i).first();
   readonly lookupLink = this.page.getByRole('link', { name: /look it up|reference/i }).first();

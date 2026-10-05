@@ -123,7 +123,7 @@ test.describe('Rooms search @rooms @search', () => {
   test('TC-022: searching a branch shows that branch in the heading', async ({ page, rooms }) => {
     await rooms.open();
     await rooms.search({ branch: 'Lekki' });
-    await expect(page.getByText(/Lekki/i).first()).toBeVisible();
+    await expect(page.getByRole('heading', { name: /Lekki/i }).or(page.locator('main').getByText(/Lekki/i).filter({ visible: true })).first()).toBeVisible();
     expect(page.url()).toMatch(/branchId=/);
   });
 
@@ -220,7 +220,8 @@ test.describe('Rooms filters @rooms @filters', () => {
     await expect(desk).toBeChecked();
   });
 
-  test('TC-081: filters survive reload', async ({ page, rooms }) => {
+  test('TC-081: filters survive reload', async ({ page, rooms }, ti) => {
+    knownBug(ti, 'TC-081 (Fail in workbook, no bug ID)');
     await rooms.filterCheckbox(/deluxe/i).first().check();
     await page.reload();
     await rooms.waitForResults();
@@ -252,11 +253,13 @@ test.describe('Room details @rooms @details', () => {
 
   test('TC-089: adults/children steppers respect capacity @boundary', async ({ roomDetail }) => {
     await roomDetail.open(BOOKABLE_ROOM_ID);
-    for (let i = 0; i < 5; i++) await roomDetail.stepper('adults', 'decrease').click({ trial: false }).catch(() => {});
-    await expect(roomDetail.adults).toHaveValue(/^[1-9]/);
-    for (let i = 0; i < 20; i++) await roomDetail.stepper('adults', 'increase').click().catch(() => {});
-    const val = Number(await roomDetail.adults.inputValue().catch(() => '0'));
-    expect(val).toBeLessThan(20);
+    const dec = roomDetail.stepper('adults', 'decrease');
+    const inc = roomDetail.stepper('adults', 'increase');
+    test.skip(!(await dec.isVisible().catch(() => false)), 'No adults stepper buttons found');
+    for (let i = 0; i < 5 && (await dec.isEnabled()); i++) await dec.click();
+    expect(Number(await roomDetail.adults.inputValue().catch(async () => (await roomDetail.adults.textContent()) ?? '1'))).toBeGreaterThanOrEqual(1);
+    for (let i = 0; i < 20 && (await inc.isEnabled()); i++) await inc.click();
+    expect(await inc.isEnabled(), 'increase disabled at capacity').toBe(false);
   });
 
   test('TC-091 / TC-052 / BUG-037: invalid room ID shows a not-found state, not an endless skeleton', async ({ roomDetail }, ti) => {

@@ -1,5 +1,6 @@
 import { test, expect, knownBug } from '../../utils/fixtures';
 import { env, hasCredentials } from '../../utils/env';
+import { field } from '../../pages/BasePage';
 
 test.describe('Account & sign-in @account', () => {
   test.beforeEach(async ({ home }) => {
@@ -105,7 +106,7 @@ test.describe('Account & sign-in @account', () => {
     await auth.openFromHeader();
     await auth.chooseRole('Customer');
     await auth.dialog.getByRole('button', { name: /forgot password/i }).or(auth.dialog.getByRole('link', { name: /forgot password/i })).first().click();
-    await auth.dialog.getByLabel(/email/i).first().fill('nobody.qa@example.com');
+    await field(auth.dialog, /e-?mail/i, 'email').fill('nobody.qa@example.com');
     await auth.dialog.getByRole('button', { name: /send|reset|continue/i }).last().click();
     await expect(auth.dialog.getByText(/if an account exists|we.?ve sent|check your (email|inbox)/i).first()).toBeVisible();
   });

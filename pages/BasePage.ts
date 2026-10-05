@@ -1,5 +1,14 @@
 import { type Locator, type Page } from '@playwright/test';
 
+/** Text input found by label, then placeholder, then name/id/type attribute. */
+export function field(scope: Page | Locator, label: RegExp, attr: string): Locator {
+  return scope
+    .getByLabel(label)
+    .or(scope.getByPlaceholder(label))
+    .or(scope.locator(`input[name*="${attr}" i], input[id*="${attr}" i], input[type="${attr === 'phone' ? 'tel' : attr}"], textarea[name*="${attr}" i]`))
+    .first();
+}
+
 export class BasePage {
   readonly header: Locator;
   readonly footer: Locator;

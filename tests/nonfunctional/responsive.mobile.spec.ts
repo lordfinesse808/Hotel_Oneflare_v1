@@ -7,16 +7,14 @@ const noHorizontalScroll = (page: import('@playwright/test').Page) =>
   page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1);
 
 test.describe('Mobile 375px @ui @responsive @mobile', () => {
-  test('TC-046 / BUG-038: no horizontal scroll on Home, Rooms, Contact and room detail', async ({ page }, ti) => {
-    knownBug(ti, 'BUG-038');
+  test('TC-046 / BUG-038: no horizontal scroll on Home, Rooms, Contact and room detail', async ({ page }) => {
     for (const p of ['/', '/rooms', '/contact', `/rooms/${BOOKABLE_ROOM_ID}`]) {
       await page.goto(p);
       expect.soft(await noHorizontalScroll(page), p).toBe(true);
     }
   });
 
-  test('TC-116 / BUG-038: Branches cards stack and buttons are not clipped', async ({ page }, ti) => {
-    knownBug(ti, 'BUG-038');
+  test('TC-116 / BUG-038: Branches cards stack and buttons are not clipped', async ({ page }) => {
     await page.goto('/branches');
     for (const btn of await page.getByRole('link', { name: /see rooms at/i }).all()) {
       const clipped = await btn.evaluate((el) => el.scrollWidth > el.clientWidth + 1);
@@ -41,7 +39,7 @@ test.describe('Mobile 375px @ui @responsive @mobile', () => {
   test('TC-080: mobile filter drawer opens, applies and closes', async ({ page, rooms }) => {
     await rooms.open();
     await page.getByRole('button', { name: /filter/i }).first().click();
-    const drawer = page.getByRole('dialog').first();
+    const drawer = page.getByRole('dialog').filter({ has: page.getByRole('checkbox') }).first();
     await expect(drawer).toBeVisible();
     await drawer.getByRole('checkbox', { name: /deluxe/i }).first().check();
     const show = drawer.getByRole('button', { name: /show \d+ rooms?/i });
@@ -57,7 +55,7 @@ test.describe('Mobile 375px @ui @responsive @mobile', () => {
     for (const name of [/rooms/i, /branches/i, /gallery/i, /about/i, /contact/i, /book now/i]) {
       await expect.soft(page.getByRole('link', { name }).filter({ visible: true }).first()).toBeVisible();
     }
-    await page.getByRole('button', { name: /close|toggle menu/i }).first().click();
+    await page.getByRole('button', { name: /close menu/i }).click();
     await expect(page.getByRole('link', { name: /book now/i }).filter({ visible: true })).toHaveCount(0);
   });
 

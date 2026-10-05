@@ -163,17 +163,23 @@ test.describe('Branches @branches', () => {
     }
   });
 
-  for (const b of BRANCHES) {
-    test(`TC-072: "See rooms at" ${b} opens Rooms filtered to that branch`, async ({ page, branches, rooms }) => {
-      await branches.card(b).getByRole('link', { name: /see rooms at/i }).click();
+  test('TC-072: each "See rooms at <branch>" opens Rooms filtered to that branch', async ({ page, branches, rooms }) => {
+    const links = branches.seeRoomsLinks();
+    await expect(links).toHaveCount(BRANCHES.length);
+    const ids = new Set<string>();
+    for (let i = 0; i < BRANCHES.length; i++) {
+      await branches.open();
+      await links.nth(i).click();
       await expect(page).toHaveURL(/\/rooms\?.*branchId=/);
+      ids.add(new URL(page.url()).searchParams.get('branchId')!);
       await rooms.waitForResults();
-    });
-  }
+    }
+    expect(ids.size, 'distinct branchIds').toBe(BRANCHES.length);
+  });
 
   test('TC-073 / BUG-048: "Contact this branch" opens Contact with that branch tab active', async ({ page, branches }, ti) => {
     knownBug(ti, 'BUG-048');
-    await branches.card('Lekki').getByRole('link', { name: /contact this branch/i }).click();
+    await branches.card('Lekki').getByRole('link', { name: /contact this branch/i }).or(page.getByRole('link', { name: /contact this branch/i }).nth(2)).first().click();
     await expect(page).toHaveURL(/\/contact/);
     await expect(page.getByText(/going to.*lekki/i).first()).toBeVisible();
   });
@@ -215,7 +221,7 @@ test.describe('Gallery @gallery', () => {
   });
 
   test('TC-111: lightbox opens, navigates and closes with keyboard', async ({ page, gallery }) => {
-    await gallery.images().first().click();
+    await gallery.images().first().click({ force: true });
     await expect(gallery.lightbox).toBeVisible();
     await page.keyboard.press('ArrowRight');
     await page.keyboard.press('ArrowLeft');

@@ -4,7 +4,7 @@ import { test, expect, knownBug } from '../../utils/fixtures';
 test.describe('Accessibility @accessibility', () => {
   for (const path of ['/', '/rooms', '/contact', '/branches', '/gallery', '/about']) {
     test(`TC-056 / BUG-001 / BUG-045: no critical axe violations on ${path}`, async ({ page }, ti) => {
-      knownBug(ti, 'BUG-001', 'BUG-045');
+      if (['/', '/rooms', '/gallery'].includes(path)) knownBug(ti, 'BUG-001', 'BUG-045');
       await page.goto(path);
       await page.waitForLoadState('networkidle').catch(() => {});
       const results = await new AxeBuilder({ page: page as any }).withTags(['wcag2a', 'wcag2aa']).analyze();
@@ -48,7 +48,7 @@ test.describe('Accessibility @accessibility', () => {
 
   for (const path of ['/', '/rooms', '/contact', '/branches', '/gallery', '/about']) {
     test(`TC-123 / BUG-036: one meaningful H1 and landmarks on ${path}`, async ({ page }, ti) => {
-      knownBug(ti, 'BUG-036');
+      if (path === '/about') knownBug(ti, 'BUG-036');
       await page.goto(path);
       const h1 = page.getByRole('heading', { level: 1 });
       await expect(h1).toHaveCount(1);

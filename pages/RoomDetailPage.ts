@@ -15,10 +15,8 @@ export class RoomDetailPage extends BasePage {
   }
 
   stepper(kind: 'adults' | 'children', dir: 'increase' | 'decrease') {
-    const sign = dir === 'increase' ? /increase|\+|add|more/i : /decrease|−|-|remove|fewer/i;
-    return this.page.getByRole('button', { name: new RegExp(`${dir}.*${kind}|${kind}.*${dir}`, 'i') }).or(
-      this.page.locator('div,fieldset').filter({ hasText: new RegExp(`^${kind}`, 'i') }).getByRole('button', { name: sign }),
-    ).first();
+    const verb = dir === 'increase' ? '(increase|add|more|plus)' : '(decrease|remove|fewer|minus)';
+    return this.page.getByRole('button', { name: new RegExp(`${verb}.*${kind}|${kind}.*${verb}`, 'i') }).first();
   }
 
   async totalText() {

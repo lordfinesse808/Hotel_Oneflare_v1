@@ -1,10 +1,10 @@
 import { type Locator } from '@playwright/test';
-import { BasePage } from './BasePage';
+import { BasePage, field } from './BasePage';
 
 export class BookingPage extends BasePage {
-  readonly fullName = this.page.getByLabel(/full name|name/i).first();
-  readonly email = this.page.getByLabel(/e-?mail/i).first();
-  readonly phone = this.page.getByLabel(/phone/i).first();
+  readonly fullName = field(this.page, /full name|name/i, 'name');
+  readonly email = field(this.page, /e-?mail/i, 'email');
+  readonly phone = field(this.page, /phone/i, 'phone');
   readonly consent = this.page.getByRole('checkbox').first();
   readonly reviewBtn = this.page.getByRole('button', { name: /review my booking/i }).first();
   readonly confirmBtn = this.page.getByRole('button', { name: /confirm booking/i }).first();
@@ -26,7 +26,10 @@ export class BookingPage extends BasePage {
 
   /** Currently highlighted step in the 1-4 step indicator. */
   currentStep() {
-    return this.page.locator('[aria-current="step"], [aria-current="true"]').first();
+    return this.page
+      .locator('[aria-current="step"], [aria-current="true"], [data-state="active"], [data-active="true"]')
+      .or(this.page.locator('ol li, nav li').filter({ has: this.page.locator('[class*="bg-accent"], [class*="bg-primary"], [class*="font-semibold"]') }))
+      .first();
   }
 
   fieldError() {

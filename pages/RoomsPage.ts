@@ -7,7 +7,7 @@ export class RoomsPage extends BasePage {
   /** e.g. "5 room types available" */
   readonly resultsHeading = this.page.getByRole('heading', { name: /\d+\s+room types?/i }).first();
   readonly emptyState = this.page.getByText(/no rooms match|no rooms available/i).first();
-  readonly clearFilters = this.page.getByRole('button', { name: /clear filters/i }).first();
+  readonly clearFilters = this.page.getByRole('button', { name: /clear( all)? filters/i }).or(this.page.getByRole('link', { name: /clear( all)? filters/i })).first();
   readonly priceSlider = this.page.getByRole('slider').or(this.page.locator('input[type="range"]')).first();
   readonly filterButton = this.page.getByRole('button', { name: /^filters?$/i }).first();
 
@@ -18,11 +18,21 @@ export class RoomsPage extends BasePage {
     return this.goto(`/rooms${qs ? `?${qs}` : ''}`);
   }
 
-  /** Room cards are identified by their "Select room" action. */
+  private action(name: RegExp) {
+    return this.page.getByRole('link', { name }).or(this.page.getByRole('button', { name }));
+  }
+
+  /** Innermost element holding a heading plus the "Select room" and "View details" actions. */
   cards(): Locator {
-    return this.page
-      .locator('article, li, [class*="card" i]')
-      .filter({ has: this.page.getByRole('link', { name: /select room/i }).or(this.page.getByRole('button', { name: /select room/i })) });
+    const holder = (sel: string) =>
+      this.page.locator(sel).filter({ has: this.page.getByRole('heading') }).filter({ has: this.action(/select room/i) }).filter({ has: this.action(/view details/i) });
+    // Inner locators resolve relative to each candidate, so the nested one must not be rooted at <main>.
+    return holder('main div, main article, main li').filter({ hasNot: holder('div, article, li') });
+  }
+
+  /** Fails fast instead of letting per-card loops pass with zero cards. */
+  async expectCards() {
+    await expect(this.cards().first(), 'at least one room card').toBeVisible();
   }
 
   async waitForResults() {
@@ -35,6 +45,7 @@ export class RoomsPage extends BasePage {
   }
 
   async cardTitles(): Promise<string[]> {
+    await this.expectCards();
     const cards = this.cards();
     const n = await cards.count();
     const titles: string[] = [];
@@ -45,6 +56,7 @@ export class RoomsPage extends BasePage {
   }
 
   async cardTexts(): Promise<string[]> {
+    await this.expectCards();
     return this.cards().allInnerTexts();
   }
 
@@ -53,11 +65,11 @@ export class RoomsPage extends BasePage {
   }
 
   selectRoom(index = 0) {
-    return this.cards().nth(index).getByRole('link', { name: /select room/i }).or(this.cards().nth(index).getByRole('button', { name: /select room/i })).first();
+    return this.action(/select room/i).nth(index);
   }
 
   viewDetails(index = 0) {
-    return this.cards().nth(index).getByRole('link', { name: /view details/i }).first();
+    return this.action(/view details/i).nth(index);
   }
 
   async search(opts: { branch?: string; checkIn?: string; checkOut?: string; adults?: number }) {
