@@ -1,0 +1,34 @@
+{
+  "name": "oneflare-hotel-e2e",
+  "version": "1.0.0",
+  "description": "Automated Playwright test suite for https://hotel-plaza-preview.vercel.app",
+  "scripts": {
+    "test": "playwright test",
+    "test:api": "playwright test --project=api",
+    "test:desktop": "playwright test --project=desktop-chromium",
+    "test:mobile": "playwright test --project=mobile-chromium",
+    "test:booking": "playwright test --grep @booking",
+    "test:smoke": "playwright test --grep \"@api|TC-013|TC-096\"",
+    "test:known-bugs": "EXPECT_KNOWN_BUGS=1 playwright test",
+    "test:cross-browser": "BROWSERS=all playwright test",
+    "report": "playwright show-report",
+    "typecheck": "tsc"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/lordfinesse808/Hotel_Oneflare_v1.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/lordfinesse808/Hotel_Oneflare_v1/issues"
+  },
+  "homepage": "https://github.com/lordfinesse808/Hotel_Oneflare_v1#readme",
+  "devDependencies": {
+    "@axe-core/playwright": "^4.13.0",
+    "@playwright/test": "^1.56.1",
+    "@types/node": "^26.6.4",
+    "typescript": "^7.0.2"
+  }
+}
