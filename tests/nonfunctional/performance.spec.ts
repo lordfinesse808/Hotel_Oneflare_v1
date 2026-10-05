@@ -24,8 +24,7 @@ async function measure(page: import('@playwright/test').Page) {
 
 test.describe('Performance @performance', () => {
   for (const path of ['/', '/rooms']) {
-    test(`TC-051: LCP under 4s on Slow 4G for ${path}`, async ({ page, browserName }, ti) => {
-      if (path === '/') knownBug(ti, 'NEW: Home LCP ~4.2s on Slow 4G');
+    test(`TC-051: LCP under 4s on Slow 4G for ${path}`, async ({ page, browserName }) => {
       test.skip(browserName !== 'chromium', 'Network throttling needs CDP');
       const cdp = await page.context().newCDPSession(page);
       await cdp.send('Network.enable');
@@ -38,8 +37,7 @@ test.describe('Performance @performance', () => {
       await waitForSkeletonsToResolve(page, 5000);
     });
 
-    test(`TC-053 / BUG-013: cumulative layout shift <= 0.1 on ${path}`, async ({ page }, ti) => {
-      if (path === '/rooms') knownBug(ti, 'BUG-013');
+    test(`TC-053 / BUG-013: cumulative layout shift <= 0.1 on ${path}`, async ({ page }) => {
       await page.goto(path, { waitUntil: 'load' });
       const m = await measure(page);
       expect(m.cls).toBeLessThanOrEqual(0.1);

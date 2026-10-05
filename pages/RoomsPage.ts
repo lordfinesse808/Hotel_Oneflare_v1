@@ -1,4 +1,4 @@
-import { expect, type Locator } from '@playwright/test';
+import { expect, type Locator, type Page } from '@playwright/test';
 import { BasePage } from './BasePage';
 
 export type RoomsQuery = { branchId?: string; checkIn?: string; checkOut?: string; adults?: number; children?: number };
@@ -22,10 +22,23 @@ export class RoomsPage extends BasePage {
     return this.page.getByRole('link', { name }).or(this.page.getByRole('button', { name }));
   }
 
-  /** Innermost element holding a Naira price plus the "Select room" and "View details" actions. */
+  /** Room name: a heading or a text link that is not one of the CTAs. */
+  private titleLocator(scope: Page | Locator) {
+    return scope
+      .locator('h1,h2,h3,h4,h5,h6,[role="heading"],a')
+      .filter({ hasText: /[A-Za-z]/ })
+      .filter({ hasNotText: /select room|view details|\d+\s+room types?|^filters?$/i });
+  }
+
+  /** Innermost element holding a room name, a Naira price and both CTAs. */
   cards(): Locator {
     const holder = (sel: string) =>
-      this.page.locator(sel).filter({ hasText: /₦/ }).filter({ has: this.action(/select room/i) }).filter({ has: this.action(/view details/i) });
+      this.page
+        .locator(sel)
+        .filter({ hasText: /₦/ })
+        .filter({ has: this.titleLocator(this.page) })
+        .filter({ has: this.action(/select room/i) })
+        .filter({ has: this.action(/view details/i) });
     // Inner locators resolve relative to each candidate, so the nested one must not be rooted at <main>.
     return holder('main div, main article, main li').filter({ hasNot: holder('div, article, li') });
   }
@@ -51,7 +64,7 @@ export class RoomsPage extends BasePage {
     const titles: string[] = [];
     for (let i = 0; i < n; i++) {
       // Title is the card's heading, or its first link that is not a CTA.
-      const title = cards.nth(i).locator('h1,h2,h3,h4,h5,h6,[role="heading"]').or(cards.nth(i).locator('a').filter({ hasNotText: /select room|view details/i })).first();
+      const title = this.titleLocator(cards.nth(i)).first();
       titles.push(((await title.textContent()) ?? '').trim());
     }
     return titles;
