@@ -23,7 +23,8 @@ test.describe('Rooms listing @rooms', () => {
     }
   });
 
-  test('TC-003 / BUG-002: card titles have no duplicated "Room" @regression', async ({ rooms }) => {
+  test('TC-003 / BUG-002: card titles have no duplicated "Room" @regression', async ({ rooms }, ti) => {
+    knownBug(ti, 'BUG-002');
     for (const t of await rooms.cardTitles()) expect.soft(t).not.toMatch(/\bRoom Room\b/i);
   });
 
@@ -126,7 +127,8 @@ test.describe('Rooms search @rooms @search', () => {
     expect(page.url()).toMatch(/branchId=/);
   });
 
-  test('TC-076 / BUG-025: Lagos branch lists no test rooms', async ({ rooms }) => {
+  test('TC-076 / BUG-025: Lagos branch lists no test rooms', async ({ rooms }, ti) => {
+    knownBug(ti, 'BUG-025');
     await rooms.open();
     await rooms.search({ branch: 'Lagos' });
     for (const t of await rooms.cardTitles()) expect.soft(t).not.toMatch(/test|latest type/i);
