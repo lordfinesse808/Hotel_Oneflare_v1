@@ -181,7 +181,8 @@ test.describe('Rooms filters @rooms @filters', () => {
     expect(await rooms.cards().count()).toBeLessThanOrEqual(one);
   });
 
-  test('TC-029: incompatible filters show empty state with Clear filters @negative', async ({ rooms }) => {
+  test('TC-029: incompatible filters show empty state with Clear filters @negative', async ({ rooms }, ti) => {
+    knownBug(ti, 'NEW: empty state has no Clear filters control');
     await rooms.filterCheckbox(/presidential/i).first().check();
     await rooms.priceSlider.fill('20000').catch(() => {});
     await expect(rooms.emptyState).toBeVisible();

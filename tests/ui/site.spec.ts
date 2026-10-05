@@ -219,7 +219,8 @@ test.describe('Gallery @gallery', () => {
     }
   });
 
-  test('TC-111: lightbox opens, navigates and closes with keyboard', async ({ page, gallery }) => {
+  test('TC-111: lightbox opens, navigates and closes with keyboard', async ({ page, gallery }, ti) => {
+    knownBug(ti, 'NEW: clicking a gallery photo opens no lightbox');
     const img = gallery.images().first();
     const trigger = img.locator('xpath=ancestor::*[self::button or self::a or @role="button" or @tabindex][1]');
     await ((await trigger.count()) ? trigger : img).click({ force: true });
@@ -273,7 +274,8 @@ test.describe('Contact @contact', () => {
     await expect(contact.goingTo).toContainText(/Lekki/i);
   });
 
-  test('TC-012: contact form submits with valid data', async ({ page, contact }) => {
+  test('TC-012: contact form submits with valid data', async ({ page, contact }, ti) => {
+    knownBug(ti, 'NEW: contact form sends no request');
     // Intercept the submission so no real enquiry is sent to the front office.
     const writes = await interceptWrites(page, { status: 200, json: { ok: true } });
     await contact.name.fill(CONTACT.name);
@@ -283,7 +285,9 @@ test.describe('Contact @contact', () => {
     await contact.message.fill(CONTACT.message);
     await page.getByRole('checkbox').first().check().catch(() => {});
     await contact.send.click();
-    await expect.poll(() => writes.length, { message: 'form submits a request' }).toBeGreaterThan(0);
+    const success = page.getByText(/thank|sent|received|we.?ll be in touch/i).first();
+    await expect.poll(async () => writes.length > 0 || (await success.isVisible()), { message: 'form reacts to Send' }).toBe(true);
+    expect(writes.length, 'success shown but no request was sent').toBeGreaterThan(0);
     expect(writes.map((w) => w.body).join('\n')).toContain(CONTACT.email);
   });
 
